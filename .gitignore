@@ -1,3 +1,6 @@
-*.lib
-*.dll
 *.exe
+*.ilk
+*.opensdf
+*.pdb
+*.sdf
+*.suo
