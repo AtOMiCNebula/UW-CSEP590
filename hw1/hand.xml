@@ -33,7 +33,7 @@
 	
 	<body>
 		<geom name="tableTop" type="plane" pos="0.15 0 0" size="0.6 0.6 0.5" rgba=".6 .6 .5 1" contype="1" conaffinity="1"/>
-		<geom type="capsule" pos="0.17 0.2 0.15" name="target" size="0.025 0.035" quat="0.85 -0.51 -0.13 0" rgba="0.5 0.9 0.6 .2" user="1" contype="1" conaffinity="1"/>
+		<geom type="capsule" pos="0.17 0.2 0.15" name="target" size="0.025 0.035" quat="0.85 -0.51 -0.13 0" rgba="0.5 0.9 0.6 .2" user="1" contype="0" conaffinity="0"/>
 
 	                                                                
 		<!--  ================= ARM ================= /-->
