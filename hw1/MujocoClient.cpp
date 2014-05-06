@@ -18,17 +18,17 @@ typedef Quaternion<double> Quat;
 // between -1 and +1 are acceptable gripAmount values
 void setGrip(double gripAmount, Vector &thetahat)
 {
-  // indices for joints of two gripper fingers
-  static const int L_GRIP_JOINT_INDEX = 7;
-  static const int R_GRIP_JOINT_INDEX = 8;
-  
-  thetahat[L_GRIP_JOINT_INDEX] = -gripAmount;
-  thetahat[R_GRIP_JOINT_INDEX] = +gripAmount;
+	// indices for joints of two gripper fingers
+	static const int L_GRIP_JOINT_INDEX = 7;
+	static const int R_GRIP_JOINT_INDEX = 8;
+
+	thetahat[L_GRIP_JOINT_INDEX] = -gripAmount;
+	thetahat[R_GRIP_JOINT_INDEX] = +gripAmount;
 }
 
 void main(void)
 {
-  // indices for nodes in the scene
+	// indices for nodes in the scene
 	static const int TARGET_GEOM_INDEX = 1;
 	static const int HAND_GEOM_INDEX = 4;
 	static const int OBJECT_GEOM_INDEX = 13; 

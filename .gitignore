@@ -4,3 +4,6 @@
 *.pdb
 *.sdf
 *.suo
+
+MUJOCO_LOG.TXT
+defaults.mjs
