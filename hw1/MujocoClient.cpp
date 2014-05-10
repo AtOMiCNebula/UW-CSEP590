@@ -117,6 +117,10 @@ void main(void)
 			{
 				// Pseudo Inverse method
 				// delta_theta = alpha * J^# * delta_x + (I - J^# * J)(theta_0 - theta)
+
+				Vector thetaNaught(dimtheta);
+				Matrix Jsharp = (Jpos.transpose() * (Jpos * Jpos.transpose()).inverse());
+				delta_theta = (alpha * Jsharp * (xhat - x)) + ((I - (Jsharp * Jpos)) * (thetaNaught - theta));
 			}
 			thetahat = theta + delta_theta;
 
