@@ -102,7 +102,7 @@ void main(void)
 			// set thetahat through Jacobian control methods here
 			// for part 4 of assignment, you may need to call setGrip(amount, thetahat) here
 			// thetahat should be filled by this point
-			const bool fJacobian = false;
+			const bool fJacobian = true;
 
 			// Part 1 (Position Control)
 			// thetaHat = theta + delta_theta
@@ -111,7 +111,9 @@ void main(void)
 			if (fJacobian)
 			{
 				// Jacobian Transpose method
-				// delta_theta = alpha * J^t ( theta ) * (xHat - x)
+				// delta_theta = alpha * J^t(theta) * (xHat - x)
+
+				delta_theta = alpha * Jpos.transpose() * (xhat - x);
 			}
 			else
 			{
