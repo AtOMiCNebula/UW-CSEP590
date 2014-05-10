@@ -102,6 +102,23 @@ void main(void)
 			// set thetahat through Jacobian control methods here
 			// for part 4 of assignment, you may need to call setGrip(amount, thetahat) here
 			// thetahat should be filled by this point
+			const bool fJacobian = false;
+
+			// Part 1 (Position Control)
+			// thetaHat = theta + delta_theta
+			const double alpha = 0.01;
+			Vector delta_theta(dimtheta);
+			if (fJacobian)
+			{
+				// Jacobian Transpose method
+				// delta_theta = alpha * J^t ( theta ) * (xHat - x)
+			}
+			else
+			{
+				// Pseudo Inverse method
+				// delta_theta = alpha * J^# * delta_x + (I - J^# * J)(theta_0 - theta)
+			}
+			thetahat = theta + delta_theta;
 
 			// set target DOFs to thetahat and advance simulation
 			mjSetControl(dimtheta, thetahat);
