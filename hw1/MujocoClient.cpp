@@ -13,6 +13,10 @@ typedef GVector<double> Vector;
 typedef GMatrix<double> Matrix;
 typedef Quaternion<double> Quat;
 
+// indices for joints of two gripper fingers
+static const int L_GRIP_JOINT_INDEX = 7;
+static const int R_GRIP_JOINT_INDEX = 8;
+
 // sets thetahat such that gripper fingers open or close by gripAmount
 // gripAmount = 0: default gipper posture
 // gripAmount > 0: gripper fingers opened
@@ -20,10 +24,6 @@ typedef Quaternion<double> Quat;
 // between -1 and +1 are acceptable gripAmount values
 void setGrip(double gripAmount, Vector &thetahat)
 {
-	// indices for joints of two gripper fingers
-	static const int L_GRIP_JOINT_INDEX = 7;
-	static const int R_GRIP_JOINT_INDEX = 8;
-
 	thetahat[L_GRIP_JOINT_INDEX] = -gripAmount;
 	thetahat[R_GRIP_JOINT_INDEX] = +gripAmount;
 }
@@ -42,6 +42,57 @@ Vector computePseudoInverse(double alpha, const Matrix &J, const Vector &delta_x
 	const Vector thetaNaught(theta.getSize());
 	Matrix Jsharp = (J.transpose() * (J * J.transpose()).inverse());
 	return ((alpha * Jsharp * delta_x) + ((I - (Jsharp * J)) * (thetaNaught - theta)));
+}
+
+// Part 4 State Machine Stuff
+enum PART4STATE
+{
+	STATE_INIT,             // start opening grip
+	STATE_OPENGRIP_WAIT,    // wait for grip to fully open
+	STATE_MOVETOOBJECT,     // move hand to object
+	STATE_CLOSEGRIP_START,  // start closing grip
+	STATE_CLOSEGRIP_WAIT,   // wait for grip to fully close around object
+	STATE_MOVETOTARGET,     // move hand to target
+	STATE_DONE,             // open hand, and we're done!
+};
+
+void StateMachineCheckEndCondition(PART4STATE &stateCurrent, PART4STATE stateNext, double dCheck, double dEpsilon)
+{
+	static bool fLastCheckInited = false;
+	static double dLastCheck = 0;
+
+	if (!fLastCheckInited || abs(dLastCheck - dCheck) > dEpsilon)
+	{
+		fLastCheckInited = true;
+		dLastCheck = dCheck;
+	}
+	else
+	{
+		stateCurrent = stateNext;
+		fLastCheckInited = false;
+	}
+}
+void StateMachineCheckEndCondition(PART4STATE &stateCurrent, PART4STATE stateNext, Vector vCheck, double dEpsilon)
+{	
+	static bool fLastCheckInited = false;
+	static double dLastCheck = 0;
+
+	double dCheck = 0;
+	for (int i = 0; i < vCheck.getSize(); i++)
+	{
+		dCheck += vCheck[i]*vCheck[i];
+	}
+
+	if (!fLastCheckInited || dCheck > dEpsilon)
+	{
+		fLastCheckInited = true;
+		dLastCheck = dCheck;
+	}
+	else
+	{
+		stateCurrent = stateNext;
+		fLastCheckInited = false;
+	}
 }
 
 void main(void)
@@ -102,10 +153,12 @@ void main(void)
 			Vector x(3, geoms.pos + 3*HAND_GEOM_INDEX);
 			// target hand position
 			Vector xhat(3, geoms.pos + 3*TARGET_GEOM_INDEX);
+			Vector xhat_object(3, geoms.pos + 3*OBJECT_GEOM_INDEX);
 			// current hand orientation
 			Quat r(geoms.quat + 4*HAND_GEOM_INDEX);
 			// target hand orientation
 			Quat rhat(geoms.quat + 4*TARGET_GEOM_INDEX);
+			Quat rhat_object(geoms.quat + 4*OBJECT_GEOM_INDEX);
 
 			mjJacobian jacobians = mjJacGeom(HAND_GEOM_INDEX);
 			// current hand position Jacobian
@@ -121,8 +174,74 @@ void main(void)
 			// for part 4 of assignment, you may need to call setGrip(amount, thetahat) here
 			// thetahat should be filled by this point
 			const bool fJacobian = true;
-			const int iEnabledControlMethods = 0x3;
 			const double alpha = 0.01;
+			const bool fPart4StateMachine = true;
+			static int iEnabledControlMethods = 0x3;
+			static double dGrip = 0;
+
+			// Part 4 (Picking Up an Object)
+			if (fPart4StateMachine)
+			{
+				static PART4STATE eState = STATE_INIT;
+
+				switch (eState)
+				{
+				case STATE_INIT:
+					// To start things off, let's disable movement and start opening our grip
+					iEnabledControlMethods = 0x0;
+					dGrip = 1;
+					eState = STATE_OPENGRIP_WAIT;
+					break;
+
+				case STATE_OPENGRIP_WAIT:
+					// Keep opening grip until it's open as wide as it's going to get
+					StateMachineCheckEndCondition(eState, STATE_MOVETOOBJECT, theta[L_GRIP_JOINT_INDEX], 0);
+					break;
+
+				case STATE_MOVETOOBJECT:
+					// Change rhat/xhat to point to the object instead of the target
+					iEnabledControlMethods = 0x3;
+					xhat = xhat_object;
+					rhat = rhat_object;
+
+					// Notably, we do not want our wrist to try to position itself in the center of
+					// the object, just in front of it a little bit.  So, offset xhat a little bit!
+					xhat[0] -= 0.05;
+
+					// Are we there yet?
+					StateMachineCheckEndCondition(eState, STATE_CLOSEGRIP_START, (xhat-x), 0.000005);
+					break;
+
+				case STATE_CLOSEGRIP_START:
+					// Now, close the grip on the object!
+					iEnabledControlMethods = 0x0;
+					dGrip = -1;
+					eState = STATE_CLOSEGRIP_WAIT;
+					break;
+
+				case STATE_CLOSEGRIP_WAIT:
+					// Keep closing grip until it's closed as much as it's going to get
+					StateMachineCheckEndCondition(eState, STATE_MOVETOTARGET, theta[L_GRIP_JOINT_INDEX], 0);
+					break;
+
+				case STATE_MOVETOTARGET:
+					// Now move the object to the target!
+					iEnabledControlMethods = 0x3;
+
+					// Just like when we moved to the object, we need to offset xhat the same amount so that
+					// it ends up in the expected spot!
+					xhat[0] -= 0.05;
+
+					// Are we there yet?
+					StateMachineCheckEndCondition(eState, STATE_DONE, (xhat-x), 0.000005);
+					break;
+
+				case STATE_DONE:
+					iEnabledControlMethods = 0x0;
+					dGrip = 1;
+					break;
+				}
+			}
 			
 			// Create our (appropriately sized!) targets to compose into
 			const bool fComposingBoth = ((iEnabledControlMethods & 0x3) == 0x3);
@@ -171,6 +290,7 @@ void main(void)
 					thetahat = theta + computePseudoInverse(alpha, Jcomposed, deltaXcomposed, theta, I);
 				}
 			}
+			setGrip(dGrip, thetahat);
 
 			// set target DOFs to thetahat and advance simulation
 			mjSetControl(dimtheta, thetahat);
