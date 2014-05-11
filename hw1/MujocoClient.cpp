@@ -103,17 +103,17 @@ void main(void)
 			// for part 4 of assignment, you may need to call setGrip(amount, thetahat) here
 			// thetahat should be filled by this point
 			const bool fJacobian = true;
-
+			const double alpha = 0.01;
+			
 			// Part 1 (Position Control)
 			// thetaHat = theta + delta_theta
-			const double alpha = 0.01;
-			Vector delta_theta(dimtheta);
+			Vector delta_theta1(dimtheta);
 			if (fJacobian)
 			{
 				// Jacobian Transpose method
 				// delta_theta = alpha * J^t(theta) * (xHat - x)
 
-				delta_theta = alpha * Jpos.transpose() * (xhat - x);
+				delta_theta1 = alpha * Jpos.transpose() * (xhat - x);
 			}
 			else
 			{
@@ -122,9 +122,10 @@ void main(void)
 
 				Vector thetaNaught(dimtheta);
 				Matrix Jsharp = (Jpos.transpose() * (Jpos * Jpos.transpose()).inverse());
-				delta_theta = (alpha * Jsharp * (xhat - x)) + ((I - (Jsharp * Jpos)) * (thetaNaught - theta));
+				delta_theta1 = (alpha * Jsharp * (xhat - x)) + ((I - (Jsharp * Jpos)) * (thetaNaught - theta));
 			}
-			thetahat = theta + delta_theta;
+
+			thetahat = theta + delta_theta1;
 
 			// set target DOFs to thetahat and advance simulation
 			mjSetControl(dimtheta, thetahat);
