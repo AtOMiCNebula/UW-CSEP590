@@ -2,6 +2,8 @@
 #include "comm.h"
 
 // algebra classes
+#define _USE_MATH_DEFINES
+#include <cmath>
 #include "GMatrix.h"
 #include "GVector.h"
 #include "Quaternion.h"
@@ -125,7 +127,21 @@ void main(void)
 				delta_theta1 = (alpha * Jsharp * (xhat - x)) + ((I - (Jsharp * Jpos)) * (thetaNaught - theta));
 			}
 
-			thetahat = theta + delta_theta1;
+			// Part 2 (Orientation Control)
+			const Quat Qrot90(cos(M_PI_4), sin(M_PI_4), 0, 0);
+			Vector delta_theta2(dimtheta);
+			if (fJacobian)
+			{
+				// Jacobian Transpose method
+
+				delta_theta2 = alpha * Jrot.transpose() * quatdiff(r, rhat*Qrot90);
+			}
+			else
+			{
+				// Pseudo Inverse method
+			}
+
+			thetahat = theta + delta_theta1 + delta_theta2;
 
 			// set target DOFs to thetahat and advance simulation
 			mjSetControl(dimtheta, thetahat);
