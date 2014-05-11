@@ -28,6 +28,22 @@ void setGrip(double gripAmount, Vector &thetahat)
 	thetahat[R_GRIP_JOINT_INDEX] = +gripAmount;
 }
 
+// Jacobian Transpose method
+// delta_theta = alpha * J^t(theta) * delta_x
+Vector computeJacobianTranspose(double alpha, const Matrix &J, const Vector &delta_x)
+{
+	return (alpha * J.transpose() * delta_x);
+}
+
+// Pseudo Inverse method
+// delta_theta = alpha * J^# * delta_x + (I - J^# * J)(theta_0 - theta)
+Vector computePseudoInverse(double alpha, const Matrix &J, const Vector &delta_x, const Vector &theta, const Matrix &I)
+{
+	const Vector thetaNaught(theta.getSize());
+	Matrix Jsharp = (J.transpose() * (J * J.transpose()).inverse());
+	return ((alpha * Jsharp * delta_x) + ((I - (Jsharp * J)) * (thetaNaught - theta)));
+}
+
 void main(void)
 {
 	// indices for nodes in the scene
@@ -115,16 +131,14 @@ void main(void)
 				// Jacobian Transpose method
 				// delta_theta = alpha * J^t(theta) * (xHat - x)
 
-				delta_theta1 = alpha * Jpos.transpose() * (xhat - x);
+				delta_theta1 = computeJacobianTranspose(alpha, Jpos, (xhat - x));
 			}
 			else
 			{
 				// Pseudo Inverse method
 				// delta_theta = alpha * J^# * delta_x + (I - J^# * J)(theta_0 - theta)
 
-				Vector thetaNaught(dimtheta);
-				Matrix Jsharp = (Jpos.transpose() * (Jpos * Jpos.transpose()).inverse());
-				delta_theta1 = (alpha * Jsharp * (xhat - x)) + ((I - (Jsharp * Jpos)) * (thetaNaught - theta));
+				delta_theta1 = computePseudoInverse(alpha, Jpos, (xhat - x), theta, I);
 			}
 
 			// Part 2 (Orientation Control)
@@ -134,7 +148,7 @@ void main(void)
 			{
 				// Jacobian Transpose method
 
-				delta_theta2 = alpha * Jrot.transpose() * quatdiff(r, rhat*Qrot90);
+				delta_theta2 = computeJacobianTranspose(alpha, Jrot, quatdiff(r, rhat*Qrot90));
 			}
 			else
 			{
