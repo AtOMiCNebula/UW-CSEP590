@@ -121,41 +121,56 @@ void main(void)
 			// for part 4 of assignment, you may need to call setGrip(amount, thetahat) here
 			// thetahat should be filled by this point
 			const bool fJacobian = true;
+			const int iEnabledControlMethods = 0x3;
 			const double alpha = 0.01;
 			
+			// Create our (appropriately sized!) targets to compose into
+			const bool fComposingBoth = ((iEnabledControlMethods & 0x3) == 0x3);
+			Matrix Jcomposed(Jpos.getNumRows() * (fComposingBoth ? 2 : 1), Jpos.getNumCols());
+			Vector deltaXcomposed(Jpos.getNumRows() * (fComposingBoth ? 2 : 1));
+
 			// Part 1 (Position Control)
-			// thetaHat = theta + delta_theta
-			Vector delta_theta1(dimtheta);
-			if (fJacobian)
+			if (iEnabledControlMethods & 0x1)
 			{
-				// Jacobian Transpose method
-				// delta_theta = alpha * J^t(theta) * (xHat - x)
+				const Vector delta_x = (xhat - x);
 
-				delta_theta1 = computeJacobianTranspose(alpha, Jpos, (xhat - x));
-			}
-			else
-			{
-				// Pseudo Inverse method
-				// delta_theta = alpha * J^# * delta_x + (I - J^# * J)(theta_0 - theta)
-
-				delta_theta1 = computePseudoInverse(alpha, Jpos, (xhat - x), theta, I);
+				assert(delta_x.getSize() == Jpos.getNumRows());
+				for (int i = 0; i < Jpos.getNumRows(); i++)
+				{
+					Jcomposed.setRow(i, Jpos.getRow(i));
+					deltaXcomposed[i] = delta_x[i];
+				}
 			}
 
 			// Part 2 (Orientation Control)
-			const Quat Qrot90(cos(M_PI_4), sin(M_PI_4), 0, 0);
-			Vector delta_theta2(dimtheta);
-			if (fJacobian)
+			if (iEnabledControlMethods & 0x2)
 			{
-				// Jacobian Transpose method
-
-				delta_theta2 = computeJacobianTranspose(alpha, Jrot, quatdiff(r, rhat*Qrot90));
+				const Quat Qrot90(cos(M_PI_4), sin(M_PI_4), 0, 0);
+				Vector delta_r = quatdiff(r, rhat*Qrot90);
+				
+				const int rowOffset = (fComposingBoth ? Jpos.getNumRows() : 0);
+				assert(delta_r.getSize() == Jrot.getNumRows());
+				for (int i = 0; i < Jrot.getNumRows(); i++)
+				{
+					Jcomposed.setRow(rowOffset+i, Jrot.getRow(i));
+					deltaXcomposed[rowOffset+i] = delta_r[i];
+				}
 			}
-			else
+
+			// Part 3 (Combined Position and Orientation Control)
+			// thetaHat = theta + delta_theta
+			if (iEnabledControlMethods != 0x0)
 			{
-				// Pseudo Inverse method
+				// Only try to compute the transforms if there's something to do!
+				if (fJacobian)
+				{
+					thetahat = theta + computeJacobianTranspose(alpha, Jcomposed, deltaXcomposed);
+				}
+				else
+				{
+					thetahat = theta + computePseudoInverse(alpha, Jcomposed, deltaXcomposed, theta, I);
+				}
 			}
-
-			thetahat = theta + delta_theta1 + delta_theta2;
 
 			// set target DOFs to thetahat and advance simulation
 			mjSetControl(dimtheta, thetahat);
