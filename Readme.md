@@ -2,3 +2,7 @@
 ## Jeff Weiner
 
 Homework assignments for the University of Washington's Robotics course.
+
+Assignments:
+
+1. Jacobian Control Methods

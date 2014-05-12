@@ -1,0 +1,9 @@
+*.exe
+*.ilk
+*.opensdf
+*.pdb
+*.sdf
+*.suo
+
+MUJOCO_LOG.TXT
+defaults.mjs
