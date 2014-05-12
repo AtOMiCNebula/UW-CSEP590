@@ -47,31 +47,13 @@ Vector computePseudoInverse(double alpha, const Matrix &J, const Vector &delta_x
 // Part 4 State Machine Stuff
 enum PART4STATE
 {
-	STATE_INIT,             // start opening grip
-	STATE_OPENGRIP_WAIT,    // wait for grip to fully open
-	STATE_MOVETOOBJECT,     // move hand to object
-	STATE_CLOSEGRIP_START,  // start closing grip
-	STATE_CLOSEGRIP_WAIT,   // wait for grip to fully close around object
-	STATE_MOVETOTARGET,     // move hand to target
-	STATE_DONE,             // open hand, and we're done!
+	STATE_INIT,         // start opening grip
+	STATE_MOVETOOBJECT, // move hand to object
+	STATE_CLOSEGRIP,    // start closing grip
+	STATE_MOVETOTARGET, // move hand to target
+	STATE_DONE,         // open hand, and we're done!
 };
 
-void StateMachineCheckEndCondition(PART4STATE &stateCurrent, PART4STATE stateNext, double dCheck, double dEpsilon)
-{
-	static bool fLastCheckInited = false;
-	static double dLastCheck = 0;
-
-	if (!fLastCheckInited || abs(dLastCheck - dCheck) > dEpsilon)
-	{
-		fLastCheckInited = true;
-		dLastCheck = dCheck;
-	}
-	else
-	{
-		stateCurrent = stateNext;
-		fLastCheckInited = false;
-	}
-}
 void StateMachineCheckEndCondition(PART4STATE &stateCurrent, PART4STATE stateNext, Vector vCheck, double dEpsilon)
 {	
 	static bool fLastCheckInited = false;
@@ -187,15 +169,10 @@ void main(void)
 				switch (eState)
 				{
 				case STATE_INIT:
-					// To start things off, let's disable movement and start opening our grip
+					// To start things off, let's disable movement and open the gripper
 					iEnabledControlMethods = 0x0;
 					dGrip = 1;
-					eState = STATE_OPENGRIP_WAIT;
-					break;
-
-				case STATE_OPENGRIP_WAIT:
-					// Keep opening grip until it's open as wide as it's going to get
-					StateMachineCheckEndCondition(eState, STATE_MOVETOOBJECT, theta[L_GRIP_JOINT_INDEX], 0);
+					eState = STATE_MOVETOOBJECT;
 					break;
 
 				case STATE_MOVETOOBJECT:
@@ -209,19 +186,14 @@ void main(void)
 					xhat[0] -= 0.05;
 
 					// Are we there yet?
-					StateMachineCheckEndCondition(eState, STATE_CLOSEGRIP_START, (xhat-x), 0.000005);
+					StateMachineCheckEndCondition(eState, STATE_CLOSEGRIP, (xhat-x), 0.000005);
 					break;
 
-				case STATE_CLOSEGRIP_START:
+				case STATE_CLOSEGRIP:
 					// Now, close the grip on the object!
 					iEnabledControlMethods = 0x0;
 					dGrip = -1;
-					eState = STATE_CLOSEGRIP_WAIT;
-					break;
-
-				case STATE_CLOSEGRIP_WAIT:
-					// Keep closing grip until it's closed as much as it's going to get
-					StateMachineCheckEndCondition(eState, STATE_MOVETOTARGET, theta[L_GRIP_JOINT_INDEX], 0);
+					eState = STATE_MOVETOTARGET;
 					break;
 
 				case STATE_MOVETOTARGET:
@@ -237,6 +209,7 @@ void main(void)
 					break;
 
 				case STATE_DONE:
+					// Done!  Stop moving, and open the gripper
 					iEnabledControlMethods = 0x0;
 					dGrip = 1;
 					break;
