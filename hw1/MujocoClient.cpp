@@ -52,10 +52,12 @@ enum PART4STATE
 	STATE_CLOSEGRIP,    // start closing grip
 	STATE_MOVETOTARGET, // move hand to target
 	STATE_DONE,         // open hand, and we're done!
+	STATE_DONEANIM1,    // "done" animation, part 1
+	STATE_DONEANIM2,    // "done" animation, part 2
 };
 
 void StateMachineCheckEndCondition(PART4STATE &stateCurrent, PART4STATE stateNext, Vector vCheck, double dEpsilon)
-{	
+{
 	static bool fLastCheckInited = false;
 	static double dLastCheck = 0;
 
@@ -212,6 +214,27 @@ void main(void)
 					// Done!  Stop moving, and open the gripper
 					iEnabledControlMethods = 0x0;
 					dGrip = 1;
+					eState = STATE_DONEANIM1;
+					break;
+
+				case STATE_DONEANIM1:
+					// Have some fun, and slowly close grip to make a waving animation
+					dGrip -= 0.0005;
+
+					if (dGrip <= 0.25)
+					{
+						eState = STATE_DONEANIM2;
+					}
+					break;
+
+				case STATE_DONEANIM2:
+					// Have some fun, and slowly open grip to make a waving animation 
+					dGrip += 0.0005;
+
+					if (dGrip >= 1)
+					{
+						eState = STATE_DONEANIM1;
+					}
 					break;
 				}
 			}
