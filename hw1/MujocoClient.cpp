@@ -162,6 +162,7 @@ void main(void)
 			const bool fPart4StateMachine = true;
 			static int iEnabledControlMethods = 0x3;
 			static double dGrip = 0;
+			Quat rhat_offset(1, 0, 0, 0);
 
 			// Part 4 (Picking Up an Object)
 			if (fPart4StateMachine)
@@ -183,6 +184,9 @@ void main(void)
 					xhat = xhat_object;
 					rhat = rhat_object;
 
+					// Apply a 90 degree rotation about the x axis, to align grippers with object
+					rhat_offset = Quat(cos(M_PI_4), sin(M_PI_4), 0, 0);
+
 					// Notably, we do not want our wrist to try to position itself in the center of
 					// the object, just in front of it a little bit.  So, offset xhat a little bit!
 					xhat[0] -= 0.05;
@@ -201,6 +205,9 @@ void main(void)
 				case STATE_MOVETOTARGET:
 					// Now move the object to the target!
 					iEnabledControlMethods = 0x3;
+
+					// Apply a 90 degree rotation about the x axis, to align grippers with target
+					rhat_offset = Quat(cos(M_PI_4), sin(M_PI_4), 0, 0);
 
 					// Just like when we moved to the object, we need to offset xhat the same amount so that
 					// it ends up in the expected spot!
@@ -260,8 +267,7 @@ void main(void)
 			// Part 2 (Orientation Control)
 			if (iEnabledControlMethods & 0x2)
 			{
-				const Quat Qrot90(cos(M_PI_4), sin(M_PI_4), 0, 0);
-				Vector delta_r = quatdiff(r, rhat*Qrot90);
+				Vector delta_r = quatdiff(r, rhat*rhat_offset);
 				
 				const int rowOffset = (fComposingBoth ? Jpos.getNumRows() : 0);
 				assert(delta_r.getSize() == Jrot.getNumRows());
