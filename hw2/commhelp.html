@@ -1,0 +1,50 @@
+<h2>Working with MuJoCo Studio remotely</h2>
+
+<p>
+User programs can connect to MuJoCo Studio over a socket and interact with the simulation. Currently this can be done from MATLAB or C++. The same set of functions are available in both environments. The main syntactic difference is that in MATLAB the mjConnect function returns a (Java) socket object which you then pass to all other functions, while in C++ the (native) socket object is internal. An example is given in the files test.m and test.cpp.
+</p>
+
+
+<h3>C++ interface</h3>
+
+<p>
+The C++ interface is provided by comm.dll compiled for Win32. To use it, include the header file comm.h in your code and link the stub library comm.lib. Assuming you have set the environment variables for the Visual Studio command-line compiler, you can build the example in the CPP directory with:<br><br>
+
+cl test.cpp comm.lib<br><br>
+
+The library uses an internal buffer for all communications with MuJoCo Studio. For efficiency reasons, data is not automatically copied in user buffers. Instead the mjGetXXX functions return small structures containing the relevant array sizes and pointers to the data in the internal buffer. It is safe to use the data until the next call to MuJoCo Studio. If you will need the data later, make a copy.<br><br>
+
+See the comments in the header file comm.h for a description of the different structures being returned. Here we assume familiarity with the key quantities in MuJoCo. Keep in mind that matrices in MuJoCo are represented in row-major format: the elements of the 1st row come first, followed by the elements of the 2nd row etc.
+</p>
+
+
+<h3>MATLAB interface</h3>
+
+<p>
+The MATLAB interface is simply a collection of .m functions in one directory. To use them, all you have to do is include this directory in your MATLAB path. The mjGetXXX functions construct MATLAB structures with copies of the data returned by MuJoCo Studio.
+</p>
+
+
+<h3>Client-server model, simulation modes</h3>
+
+<p>
+The interface (both MATLAB and C++) uses a strict client-server model, where the user code is the client and MuJoCo Studio is the server. All communications are initiated by the client, and the server always sends an appropriate response. This implies that there is no streaming mode where MuJoCo Studio pushes data to you. Instead, you have to request the data.<br><br>
+
+MuJoCo Studio can operate in three modes: dynamic (0), kinematic (1), and user (2). Kinematic mode is used for manual adjustment of the state. Dynamic mode means that the simulation is running in realtime (or with some realtime factor specified in the Mode dialog). In this mode MuJoCo Studio advances the simulation state when necessary and does not wait for socket commands. In particular, it will use the last control signal you specified until a new control signal arrives.<br><br>
+
+In user mode MuJoCo Studio waits for the user to tell it when to advance the simulation. The interface functions mjStep, mjStep1 and mjStep2 are only available in this mode. The 1/2 convention is used to break the computation in two phases, allowing you to use forward kinematics information to compute control signals. The basic loop (in C++) can be:<br><br>
+
+mjStep1();<br>
+mjState state = mjGetState();<br>
+mjCartesian body = mjGetBody();<br>
+// compute your control vector<br>
+mjSetControl(number_of_controls, control_vector);<br>
+mjStep2();<br><br>
+
+The function mjSetMode can be used to set the mode remotely. Alternatively, you can do it from the Mode dialog in MuJoCo Studio.
+</p>
+
+
+<h3>Error handling</h3>
+
+The MATLAB functions print error messages in the command window as needed. In the C++ interface errors are silent. You can use mjError after each library call to check the result. Alternatively, you can install an error handler with mjSetErrorHandler. The interface functions themselves do not return error codes.

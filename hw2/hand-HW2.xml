@@ -1,0 +1,102 @@
+<mujoco model="Simple_hand-HW2">
+	<compiler 	inertiafromgeom="true" 
+				coordinate="local" 
+				angle="degree"/>
+	
+	<size 	njmax="100"
+			nlmax="100"/>
+			
+	<option	timestep="0.01"
+			gravity="0 0 -10"
+			s_compliance ="1 1"
+			integrator="implicit"
+			viscosity="0"
+			iterations="20">
+			<disable clampvel="true"/>
+	</option>
+	
+	<default>
+		<geom rgba="1 0 0 1" friction="1 0.1 0.1" mindist="0.0" compliance="0.0001" timeconst="0.001"/>
+		<joint islimited="true" makeactuator="false"  damping="1" stiffness="0" armature=".1"  mindist="0.01" maxvel="10" timeconst="0.01"/>
+		<act-position isctrllimited="false" kp="2.65"/>
+		
+		<default class="arm">
+			<geom rgba=".9 .5 .8 1"  contype="1" conaffinity="0" />
+		</default>			
+		
+		<default class="claw">
+			<geom rgba=".65 .5 .8 1" contype="1" conaffinity="0" />
+		</default>			
+		
+	</default>
+	
+	<body>
+		<geom name="tableTop" type="plane" pos="0.15 0 0" size="0.6 0.6 0.5" rgba=".6 .6 .5 1" contype="1" conaffinity="1"/>
+		<geom type="capsule" name="obstacle1" size="0.025" fromto="0 0.1 0.03 0 0.1 .09" user="1" contype="1" conaffinity="1"/>
+		<geom type="capsule" name="obstacle2" size="0.025" fromto="0 -0.1 0.03 0 -0.1 .09" user="1" contype="1" conaffinity="1"/>
+	    <geom type="capsule" name="obstacle3" size="0.025" fromto="0 -0.3 0.25 0 0.05 .25" user="1" contype="1" conaffinity="1"/>
+	    <geom type="capsule" name="obstacle4" size="0.025" fromto="-0.12  0.3 0.17 -0.12  0.3 .5" user="1" contype="1" conaffinity="1"/>
+		<geom type="capsule" name="obstacle5" size="0.025" fromto="-0.12 -0.2 0.17 -0.12 -0.2 .5" user="1" contype="1" conaffinity="1"/>
+		<geom type="capsule" name="obstacle6" size="0.025" fromto="-0.3 -0.3 0.2 -0.3 0.3 .2" user="1" contype="1" conaffinity="1"/>
+	                                                                
+		<!--  ================= ARM ================= /-->
+		<body name="upperarm" pos="-0.15 0 0.45">
+			<geom class="arm" type="capsule" fromto="0 0 0 0 0 -0.345" size="0.05"/>
+			<joint name="s_abduction" type="hinge" pos="0 0 0" axis="1 0 0" range="-40 40"/>
+			<joint name="s_flexion" type="hinge" pos="0 0 0" axis="0 -1 0" range="-50 50"/>
+			<joint name="s_rotation" type="hinge" pos="0 0 0" axis="0 0 1" range="-50 50"/>
+			
+			<body name="forearm" pos="0 0 -0.36">
+				<geom class="arm" type="capsule" fromto="0 0 0 0.225 0 0" size="0.035"/>
+				<joint name="e_flexion" type="hinge" pos="0 0 0" axis="0 -1 0" range="-60 60"/>
+				<joint name="e_pronation" type="hinge" pos="0 0 0" axis="-1 0 0" range="-90 90"/>
+				
+				<body name="claw" pos="0.27 0 0">
+					<geom class="claw" name="Geomclaw" type="capsule" fromto="0 .02 0 0 -.02 0" size="0.01"/>
+					<joint name="w_abduction" type="hinge" pos="0 0 0" axis="0 0 1" range="-30 30" />
+					<joint name="w_flexion" type="hinge" pos="0 0 0" axis="0 -1 0" range="-60 60"/>
+					
+					<body name="rightclaw" pos=".01 -.02 0">
+						<geom name="rightclaw_it" class="claw" type="capsule" fromto="0 0 0.015 .03 -.02 0.015" 	size="0.005" />
+						<geom name="rightclaw_ot" class="claw" type="capsule" fromto=".03 -.02 0.015 .07 0 0.015" size="0.005" />
+						<geom name="rightclaw_ib" class="claw" type="capsule" fromto="0 0 -0.015 .03 -.02 -0.015" 	size="0.005" />
+						<geom name="rightclaw_ob" class="claw" type="capsule" fromto=".03 -.02 -0.015 .07 0 -0.015" size="0.005" />
+						<!-- <joint name="rc_close" type="hinge" pos="0 0 0" axis="0 0 1" range="-60 60"/> Remove the claw dof-->
+					</body>
+					
+					<body name="leftclaw" pos=".01 .02 0">
+						<geom name="leftclaw_it" class="claw" type="capsule" fromto="0 0 0.015 .03 .02 0.015" 	size="0.005" />
+						<geom name="leftclaw_ot" class="claw" type="capsule" fromto=".03 .02 0.015 .07 0 0.015" size="0.005" />
+						<geom name="leftclaw_ib" class="claw" type="capsule" fromto="0 0 -0.015 .03 .02 -0.015" 	size="0.005" />
+						<geom name="leftclaw_ob" class="claw" type="capsule" fromto=".03 .02 -0.015 .07 0 -0.015" size="0.005" />
+						<!-- <joint name="lc_close" type="hinge" pos="0 0 0" axis="0 0 1" range="-60 60"/> Remove the claw dof -->
+					</body>
+					
+				</body>
+				
+			</body>
+			
+		</body>
+	
+	</body>
+	
+	<keyframe>
+		<key qpos=' 0.35 -0.22 0.83 -0.42 0.84 0 0.35' />
+    <key qpos=' 0.7 0.87 0.87 1 -0.38 0.17 0' />
+		<key qpos=' -0.64 -0.21 -0.47 -0.1 -0.12 0 0' />
+    </keyframe>
+	
+<!-- We will just animate the solution. Actuators are not required for this HW
+	<actuator>
+		<position joint='s_abduction" 	name='As_abduction" kp="100"/>
+		<position joint='s_flexion" 	name='As_flexion" 	kp="100"/>
+		<position joint='s_rotation" 	name='As_rotation" 	kp="100"/>
+		<position joint='e_flexion" 	name='Ae_flexion" 	kp="70"/>
+		<position joint='e_pronation" 	name='Ae_pronation" kp="70"/>
+		<position joint='w_abduction" 	name='Aw_abduction" kp="30"/>
+		<position joint='w_flexion" 	name='Aw_flexion" 	kp="30"/>
+		<position joint='rc_close" 		name='Arc_close" 	kp="10"/>
+		<position joint='lc_close" 		name='Alc_close" 	kp="10"/>
+	</actuator> -->
+	
+</mujoco>
