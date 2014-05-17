@@ -74,7 +74,16 @@ bool isValidPath(const Vector &qa, const Vector &qb, const mjSize &size)
 	// number of interpolated steps between qa and qb to test for validity
 	static const int numstep = 10;
 
-	// your implementation goes here
+	Vector q(qa);
+	const Vector deltaq = (qb - qa) / (numstep+1);
+	for (int i = 0; i < numstep; i++)
+	{
+		q = q + deltaq;
+		if (!isValidState(q, size))
+		{
+			return false;
+		}
+	}
 	return true;
 }
 
@@ -144,11 +153,19 @@ void main(void)
 		GMatrix<int> neighbors(validStates.getNumRows(), K);
 		for (int i = 0; i < neighbors.getNumRows(); i++)
 		{
+			const Vector qa = validStates.getRow(i);
+
 			// Calculate distances
 			std::vector<std::pair<double, int>> distances;
 			for (int j = i+1; j < neighbors.getNumRows(); j++)
 			{
-				double distance = (validStates.getRow(j) - validStates.getRow(i)).length();
+				const Vector qb = validStates.getRow(j);
+				if (!isValidPath(qa, qb, size))
+				{
+					continue;
+				}
+
+				const double distance = (qb - qa).length();
 				distances.push_back(std::pair<double, int>(distance, j));
 			}
 
