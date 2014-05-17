@@ -78,6 +78,11 @@ bool isValidPath(const Vector &qa, const Vector &qb, const mjSize &size)
 	return true;
 }
 
+bool neighborSort(std::pair<double, int> &left, std::pair<double, int> &right)
+{
+	return (left.first < right.first);
+}
+
 void main(void)
 {
 	// three initial poses vectors (must be included in the list of samples)
@@ -134,20 +139,26 @@ void main(void)
 		validStates.setRow(numSamples+2, qinit[2]);
 		validStates.setRow(numSamples+3, qgoal);
 
-		// example: here's how to generate one sample
-		Vector qpos = generateSample();
-		// example: here's how to set this qpos in mujoco server
-		{
-			Vector qvel(size.nv);
-			Vector act(size.na);
-			qvel.setConstant(0.0);
-			act.setConstant(0.0);
-
-			mjSetState(size.nq, size.nv, size.na, 0.0, qpos, qvel, act);
-		}
-
 		// once valid, collision-free samples are generated, create a set of
 		// nearest neighbors for each sample
+		GMatrix<int> neighbors(validStates.getNumRows(), K);
+		for (int i = 0; i < neighbors.getNumRows(); i++)
+		{
+			// Calculate distances
+			std::vector<std::pair<double, int>> distances;
+			for (int j = i+1; j < neighbors.getNumRows(); j++)
+			{
+				double distance = (validStates.getRow(j) - validStates.getRow(i)).length();
+				distances.push_back(std::pair<double, int>(distance, j));
+			}
+
+			// Sort distances, and trim the list
+			std::sort(distances.begin(), distances.end(), neighborSort);
+			for (int j = 0; j < neighbors.getNumCols(); j++)
+			{
+				neighbors[i][j] = ((static_cast<size_t>(j) < distances.size()) ? distances[j].second : 0);
+			}
+		}
 
 		// find three shortest paths among the available samples from 
 		// each of three qinit vectors to qgoal vector (using nearest
