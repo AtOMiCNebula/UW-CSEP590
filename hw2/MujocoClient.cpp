@@ -125,7 +125,7 @@ void main(void)
 
 			mjSetState(size.nq, size.nv, size.na, 0.0, qpos, qvel, act);
 		}
-		
+
 		// once valid, collision-free samples are generated, create a set of
 		// nearest neighbors for each sample
 
