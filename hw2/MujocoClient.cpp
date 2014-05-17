@@ -113,6 +113,26 @@ void main(void)
 
 		// generate a collection of valid samples here
 		// make sure qinit and qgoal are included in this collection
+		const int numSamples = 500;
+		Matrix validStates(numSamples+4, NUM_JOINT);
+		for (int i = 0; i < numSamples; i++)
+		{
+			Vector qpos = generateSample();
+			if (isValidState(qpos, size))
+			{
+				// Got one!
+				validStates.setRow(i, qpos);
+			}
+			else
+			{
+				// Try again!
+				i--;
+			}
+		}
+		validStates.setRow(numSamples+0, qinit[0]);
+		validStates.setRow(numSamples+1, qinit[1]);
+		validStates.setRow(numSamples+2, qinit[2]);
+		validStates.setRow(numSamples+3, qgoal);
 
 		// example: here's how to generate one sample
 		Vector qpos = generateSample();
