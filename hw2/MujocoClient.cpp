@@ -87,9 +87,32 @@ bool isValidPath(const Vector &qa, const Vector &qb, const mjSize &size)
 	return true;
 }
 
-bool neighborSort(std::pair<double, int> &left, std::pair<double, int> &right)
+struct neighbor_t
 {
-	return (left.first < right.first);
+	double cost;
+	int other;
+
+	neighbor_t()
+		: cost(INFINITY), other(0)
+	{}
+	neighbor_t(double cost, int other)
+		: cost(cost), other(other)
+	{}
+};
+
+struct node_t
+{
+	Vector state;
+	std::vector<neighbor_t> neighbors;
+
+	node_t(const Vector &state)
+		: state(state)
+	{}
+};
+
+bool neighborSort(const neighbor_t &left, const neighbor_t &right)
+{
+	return (left.cost < right.cost);
 }
 
 void main(void)
@@ -127,15 +150,14 @@ void main(void)
 
 		// generate a collection of valid samples here
 		// make sure qinit and qgoal are included in this collection
-		const int numSamples = 500;
-		Matrix validStates(numSamples+4, NUM_JOINT);
-		for (int i = 0; i < numSamples; i++)
+		std::vector<node_t> nodes;
+		for (int i = 0; i < N; i++)
 		{
 			Vector qpos = generateSample();
 			if (isValidState(qpos, size))
 			{
 				// Got one!
-				validStates.setRow(i, qpos);
+				nodes.push_back(node_t(qpos));
 			}
 			else
 			{
@@ -143,37 +165,52 @@ void main(void)
 				i--;
 			}
 		}
-		validStates.setRow(numSamples+0, qinit[0]);
-		validStates.setRow(numSamples+1, qinit[1]);
-		validStates.setRow(numSamples+2, qinit[2]);
-		validStates.setRow(numSamples+3, qgoal);
+		nodes.push_back(node_t(qinit[0]));
+		nodes.push_back(node_t(qinit[1]));
+		nodes.push_back(node_t(qinit[2]));
+		nodes.push_back(node_t(qgoal));
 
 		// once valid, collision-free samples are generated, create a set of
 		// nearest neighbors for each sample
-		GMatrix<int> neighbors(validStates.getNumRows(), K);
-		for (int i = 0; i < neighbors.getNumRows(); i++)
+		for (size_t i = 0; i < nodes.size(); i++)
 		{
-			const Vector qa = validStates.getRow(i);
+			node_t &node = nodes[i];
+			const Vector &qa = node.state;
 
 			// Calculate distances
-			std::vector<std::pair<double, int>> distances;
-			for (int j = i+1; j < neighbors.getNumRows(); j++)
+			std::vector<neighbor_t> distances;
+			for (size_t j = i+1; j < nodes.size(); j++)
 			{
-				const Vector qb = validStates.getRow(j);
+				const Vector &qb = nodes[j].state;
 				if (!isValidPath(qa, qb, size))
 				{
 					continue;
 				}
 
 				const double distance = (qb - qa).length();
-				distances.push_back(std::pair<double, int>(distance, j));
+				distances.push_back(neighbor_t(distance, j));
 			}
 
 			// Sort distances, and trim the list
 			std::sort(distances.begin(), distances.end(), neighborSort);
-			for (int j = 0; j < neighbors.getNumCols(); j++)
+			for (size_t j = 0; (j < distances.size() && j < K); j++)
 			{
-				neighbors[i][j] = ((static_cast<size_t>(j) < distances.size()) ? distances[j].second : 0);
+				node.neighbors.push_back(distances[j]);
+
+				// Handle backwards link too
+				nodes[distances[j].other].neighbors.push_back(neighbor_t(distances[j].cost, i));
+			}
+		}
+
+		// Sort and shrink our list of neighbors as needed (the addition of
+		// backwards links may have grown over the limit and unsorted)
+		for (size_t i = 0; i < nodes.size(); i++)
+		{
+			std::vector<neighbor_t> &neighbors = nodes[i].neighbors;
+			std::sort(neighbors.begin(), neighbors.end(), neighborSort);
+			if (neighbors.size() > K)
+			{
+				neighbors.resize(K);
 			}
 		}
 
