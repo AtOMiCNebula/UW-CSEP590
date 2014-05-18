@@ -105,9 +105,22 @@ struct node_t
 	Vector state;
 	std::vector<neighbor_t> neighbors;
 
+	double dijkstra_cost;
+	int dijkstra_from;
+	bool dijkstra_visited;
+	bool dijkstra_seen;
+
 	node_t(const Vector &state)
 		: state(state)
 	{}
+
+	static void dijkstra_reset(node_t &node)
+	{
+		node.dijkstra_cost = INFINITY;
+		node.dijkstra_from = 0;
+		node.dijkstra_visited = false;
+		node.dijkstra_seen = false;
+	}
 };
 
 bool neighborSort(const neighbor_t &left, const neighbor_t &right)
@@ -217,6 +230,71 @@ void main(void)
 		// find three shortest paths among the available samples from 
 		// each of three qinit vectors to qgoal vector (using nearest
 		// neighbors above)
+		std::vector<std::vector<int>> solutionPaths(ARRAYSIZE(qinit));
+		for (size_t i = 0; i < solutionPaths.size(); i++)
+		{
+			// Reset dijkstra values to prepare for a new invocation
+			std::for_each(nodes.begin(), nodes.end(), &node_t::dijkstra_reset);
+
+			std::vector<int> toVisit;
+			toVisit.push_back(N+i); // prime our search space with qinit[i]
+			nodes[N+i].dijkstra_cost = 0;
+			nodes[N+i].dijkstra_from = N+i;
+
+			while (!toVisit.empty())
+			{
+				int nodeIdx = toVisit.front();
+				toVisit.erase(toVisit.begin());
+				node_t &node = nodes[nodeIdx];
+
+				for (size_t j = 0; j < node.neighbors.size(); j++)
+				{
+					neighbor_t &neighbor = node.neighbors[j];
+					node_t &neighborNode = nodes[neighbor.other];
+
+					// No need to evaluate nodes we've already visited
+					if (neighborNode.dijkstra_visited)
+					{
+						continue;
+					}
+					
+					if (!neighborNode.dijkstra_seen)
+					{
+						toVisit.push_back(neighbor.other);
+						neighborNode.dijkstra_seen = true;
+					}
+
+					double newCost = (node.dijkstra_cost + neighbor.cost);
+					if (newCost < neighborNode.dijkstra_cost)
+					{
+						neighborNode.dijkstra_cost = newCost;
+						neighborNode.dijkstra_from = nodeIdx;
+					}
+				}
+
+				node.dijkstra_visited = true;
+			}
+
+			if (nodes[nodes.size()-1].dijkstra_cost != INFINITY)
+			{
+				// Solution found!
+				std::vector<int> &solutionPath = solutionPaths[i];
+				int n = (nodes.size() - 1);
+				solutionPath.push_back(n);
+				do
+				{
+					if (nodes[n].dijkstra_from != n)
+					{
+						n = nodes[n].dijkstra_from;
+					}
+					solutionPath.insert(solutionPath.begin(), n);
+				} while (nodes[n].dijkstra_from != n);
+			}
+			else
+			{
+				// No solution found...
+			}
+		}
 
 		// animate three shortest paths found above by interpolating their
 		// positions and setting this interpolated state by mjSetState()
