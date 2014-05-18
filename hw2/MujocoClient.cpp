@@ -244,7 +244,7 @@ void main(void)
 			nodes[N+i].dijkstra_cost = 0;
 			nodes[N+i].dijkstra_from = N+i;
 
-			while (!toVisit.empty())
+			while (!toVisit.empty() && !nodes[nodes.size()-1].dijkstra_visited)
 			{
 				int nodeIdx = toVisit.front();
 				toVisit.erase(toVisit.begin());
