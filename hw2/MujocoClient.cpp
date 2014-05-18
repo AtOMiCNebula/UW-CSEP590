@@ -6,6 +6,7 @@
 #include "GVector.h"
 #include "Quaternion.h"
 #include "windows.h"
+#include <iostream>
 
 typedef GVector<double> Vector;
 typedef GMatrix<double> Matrix;
@@ -213,6 +214,8 @@ void main(void)
 				// Handle backwards link too
 				nodes[distances[j].other].neighbors.push_back(neighbor_t(distances[j].cost, i));
 			}
+
+			std::cout << "Processed neighbors for node #" << i << std::endl;
 		}
 
 		// Sort and shrink our list of neighbors as needed (the addition of
@@ -289,10 +292,22 @@ void main(void)
 					}
 					solutionPath.insert(solutionPath.begin(), n);
 				} while (nodes[n].dijkstra_from != n);
+
+				std::cout << "Solution for qinit[" << i << "]: ";
+				for (size_t j = 0; j < solutionPath.size(); j++)
+				{
+					if (j != 0)
+					{
+						std::cout << " --> ";
+					}
+					std::cout << solutionPath[j];
+				}
+				std::cout << std::endl;
 			}
 			else
 			{
 				// No solution found...
+				std::cout << "No solution found for qinit[" << i << "]..." << std::endl;
 			}
 		}
 
@@ -300,6 +315,10 @@ void main(void)
 		// positions and setting this interpolated state by mjSetState()
 
 		// done!
+
+		std::cout << std::endl << "Done..." << std::endl;
+		int x;
+		std::cin >> x;
 
 		mjDisconnect();
 	}
