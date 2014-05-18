@@ -138,7 +138,7 @@ void main(void)
 	// goal pose vector (must be included in the list of samples)
 	static const Vector qgoal = Vector(NUM_JOINT, keygoal);
 
-	static const int N = 1001;
+	static const int N = 100;
 	static const int K = 10;
 
 	// connect to mujoco server
@@ -313,6 +313,61 @@ void main(void)
 
 		// animate three shortest paths found above by interpolating their
 		// positions and setting this interpolated state by mjSetState()
+		int i = 0;
+		while (true)
+		{
+			std::vector<int> &solutionPath = solutionPaths[i];
+			
+			for (size_t j = 0; j < solutionPath.size(); j++)
+			{
+				if (j == 0)
+				{
+					std::cout << "Animating path #" << (i+1) << "..." << std::endl;
+				}
+
+				if (j != (solutionPath.size() - 1))
+				{
+					const int animSteps = 10000;
+
+					const Vector &qa = nodes[solutionPath[j]].state;
+					const Vector &qb = nodes[solutionPath[j+1]].state;
+					const Vector deltaq = (qb-qa) / animSteps;
+					Vector q(qa);
+
+					for (int k = 0; k < animSteps; k++)
+					{
+						Vector qvel(size.nv);
+						Vector act(size.na);
+						qvel.setConstant(0.0);
+						act.setConstant(0.0);
+						mjSetState(size.nq, size.nv, size.na, 0.0, q, qvel, act);
+
+						if (j == 0 && k == 0)
+						{
+							// If this is the first animation step for the initial
+							// segment, pause for a moment in the initial position
+							Sleep(500);
+						}
+
+						q = (q + deltaq);
+					}
+				}
+				else
+				{
+					Vector qvel(size.nv);
+					Vector act(size.na);
+					qvel.setConstant(0.0);
+					act.setConstant(0.0);
+					mjSetState(size.nq, size.nv, size.na, 0.0, nodes[solutionPath[j]].state, qvel, act);
+
+					// Nothing to interpolate for the last one, so just pause for
+					// a moment and enjoy basking in success!
+					Sleep(1500);
+				}
+			}
+
+			i = ((i + 1) % solutionPaths.size());
+		}
 
 		// done!
 
