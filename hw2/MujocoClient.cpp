@@ -129,6 +129,22 @@ bool neighborSort(const neighbor_t &left, const neighbor_t &right)
 	return (left.cost < right.cost);
 }
 
+class dijkstraSorter_t
+{
+public:
+	dijkstraSorter_t(const std::vector<node_t> &nodes)
+		: nodes(nodes)
+	{}
+
+	bool operator() (int left, int right)
+	{
+		return (nodes[left].dijkstra_cost < nodes[right].dijkstra_cost);
+	}
+
+private:
+	const std::vector<node_t> &nodes;
+};
+
 void main(void)
 {
 	// three initial poses vectors (must be included in the list of samples)
@@ -244,8 +260,11 @@ void main(void)
 			nodes[N+i].dijkstra_cost = 0;
 			nodes[N+i].dijkstra_from = N+i;
 
+			dijkstraSorter_t toVisitSort(nodes);
 			while (!toVisit.empty() && !nodes[nodes.size()-1].dijkstra_visited)
 			{
+				// Find the next node to visit with the shortest path
+				std::sort(toVisit.begin(), toVisit.end(), toVisitSort);
 				int nodeIdx = toVisit.front();
 				toVisit.erase(toVisit.begin());
 				node_t &node = nodes[nodeIdx];
