@@ -154,8 +154,8 @@ void main(void)
 	// goal pose vector (must be included in the list of samples)
 	static const Vector qgoal = Vector(NUM_JOINT, keygoal);
 
-	static const int N = 100;
-	static const int K = 10;
+	static const int N = 200;
+	static const int K = 50;
 
 	// connect to mujoco server
 	mjInit();
