@@ -170,7 +170,7 @@ void main(void)
 
 	if(mjIsConnected() && mjIsModel())
 	{
-		mjSetMode(1);
+		mjSetMode(2);
 		mjReset();
 
 		// size containts model dimensions
