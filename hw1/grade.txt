@@ -1,0 +1,13 @@
+Part1: 10/10
+Part2: 10/10
+Part3: 10/10
+Part4: 8/10 
+writeup: 10/10 
+
+Comments:-
+
+part3 - Too slow. Can afford to be aggressive.
+
+- Part4
+- Claw closes abruptly. Account for the size of object for amount of closure. Gradual closure of the claw will ensure gentle grasp.
+- Release is abrubt. Final configuration is slightly mis alligned. The trick in this part was  to realize that - After the grasp, the error vector can be calculated by using just the target and the object i.e. by asking the hand to correct for the discrepancy between the object and the target irrespective of its own configuration.
