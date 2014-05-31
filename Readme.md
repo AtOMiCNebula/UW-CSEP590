@@ -7,3 +7,4 @@ Assignments:
 
 1. Jacobian Control Methods
 2. Motion Planning
+3. State Estimation with Extended Kalman Filter
