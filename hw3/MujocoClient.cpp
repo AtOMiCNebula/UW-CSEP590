@@ -170,14 +170,11 @@ void main(void)
 				// set estimator location for visualization
 				mjSetEstimator(xa);
 
-				Vector xtarget(2);
-				// TODO:
 				// fill xtarget vector here with desired horizonal (entry 0) and
 				// vectical (entry 1) position of the paddle
-				// set controls
-				xtarget[0] = 0.0;
-				xtarget[1] = 0.0;
-
+				Vector xtarget(2);
+				xtarget[0] = xa[0];
+				xtarget[1] = xa[2];
 				mjSetControl(2, xtarget);
 
 				// step simulation forward
