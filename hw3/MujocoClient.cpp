@@ -140,15 +140,32 @@ void main(void)
 			P.setIdentity();
 			P = P * Pdiag;
 
+			Matrix I(6, 6);
+			I.setIdentity();
+
 			// run simulation until ball hits something
 			for (int k = 0;; k++)
 			{
 				// noisy sensor measurement
 				Vector z(3, mjGetSensor());
 
-				// TODO:
-				// perform your EFK predictor/corrector updates here
-				// you should have xa and P updated after this
+				// EKF Predictor (Model Forecast)
+				Vector x_fk;
+				Matrix Jf_x_akprev;
+				f(xa, &x_fk, &Jf_x_akprev);
+				Matrix P_fk = (Jf_x_akprev * P * Jf_x_akprev.transpose()) + Q;
+
+				// EKF Corrector (Data Assimilation)
+				Vector z_k;
+				Matrix Jh_x_fk;
+				h(x_fk, &z_k, &Jh_x_fk);
+				Matrix K_k = P_fk * Jh_x_fk.transpose() * (Jh_x_fk * P_fk * Jh_x_fk.transpose() + R).inverse();
+				Vector x_ak = x_fk + K_k * (z - z_k);
+				Matrix P_k = (I - K_k * Jh_x_fk) * P_fk;
+				
+				// Store our computed values for the next iteration
+				xa = x_ak;
+				P = P_k;
 
 				// set estimator location for visualization
 				mjSetEstimator(xa);
