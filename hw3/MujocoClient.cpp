@@ -92,6 +92,8 @@ void h(const Vector &x, Vector *z, Matrix *Jhx)
 
 void main(void)
 {
+	const int iEKFIterations = 1;
+
 	// dynamics noise covariance matrix
 	// dynamics are deterministic in this homework, so Q = 0
 	Matrix Q(6, 6);
@@ -156,15 +158,20 @@ void main(void)
 				Matrix P_fk = (Jf_x_akprev * P * Jf_x_akprev.transpose()) + Q;
 
 				// EKF Corrector (Data Assimilation)
-				Vector z_k;
-				Matrix Jh_x_fk;
-				h(x_fk, &z_k, &Jh_x_fk);
-				Matrix K_k = P_fk * Jh_x_fk.transpose() * (Jh_x_fk * P_fk * Jh_x_fk.transpose() + R).inverse();
-				Vector x_ak = x_fk + K_k * (z - z_k);
-				Matrix P_k = (I - K_k * Jh_x_fk) * P_fk;
+				Vector x_aki = x_fk;
+				Matrix K_ki;
+				Matrix Jh_x_aki;
+				for (int i = 0; i < iEKFIterations; i++)
+				{
+					Vector z_ki;
+					h(x_aki, &z_ki, &Jh_x_aki);
+					K_ki = P_fk * Jh_x_aki.transpose() * (Jh_x_aki * P_fk * Jh_x_aki.transpose() + R).inverse();
+					x_aki = x_fk + K_ki * (z - z_ki);
+				}
+				Matrix P_k = (I - K_ki * Jh_x_aki) * P_fk;
 				
 				// Store our computed values for the next iteration
-				xa = x_ak;
+				xa = x_aki;
 				P = P_k;
 
 				// set estimator location for visualization
