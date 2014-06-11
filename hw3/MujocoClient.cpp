@@ -165,7 +165,13 @@ void main(void)
 				{
 					Vector z_ki;
 					h(x_aki, &z_ki, &Jh_x_aki);
-					K_ki = P_fk * Jh_x_aki.transpose() * (Jh_x_aki * P_fk * Jh_x_aki.transpose() + R).inverse();
+					Matrix K_ki_PfkInverted = (Jh_x_aki * P_fk * Jh_x_aki.transpose() + R).inverse();
+					if (K_ki_PfkInverted.getQuantity() == 0)
+					{
+						printf("Matrix inversion failed!  Skipping this iteration. :(");
+						continue;
+					}
+					K_ki = P_fk * Jh_x_aki.transpose() * K_ki_PfkInverted;
 					x_aki = x_fk + K_ki * (z - z_ki);
 				}
 				Matrix P_k = (I - K_ki * Jh_x_aki) * P_fk;
