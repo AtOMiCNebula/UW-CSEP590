@@ -1,0 +1,13 @@
+Part 1: 10/10
+Part 2: 10/10
+Part 3: 10/10
+Part 4: 10/10
+Writeup: 7/10
+
+- Efficient shortest path implementation
+
+- Putting a requirement on the number of valid samples in general can make the sampler run for a very long (or even infinite) amount of time on harder problems. Limits on the number of generated samples would be a good idea.
+
+- In your writeup, you give shortest path length, while we asked for shortest path distance (as described in Part 3). Shortest path length (the number of edges traversed) is not a good indicator of performance. The path may contain many edges, but each edge may have very low distance (connecting very nearby states)
+
+- If N is large, the path may be higher resolution (many edges), which is what you are observing, but the distances of the paths may actually get smaller.
