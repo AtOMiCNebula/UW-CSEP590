@@ -1,0 +1,15 @@
+Part 1.1: 10/10
+Part 1.2: 10/10
+Part 2: 10/10
+Writeup: 9/10
+
+Correct EKF updates and paddle update
+
+Appropriate number of iterations reported
+
+Iterative EKF doesn't necessarily help with non-gaussian noise. It helps with nonlinear obesrvation and dynamics functions
+
+Good idea averaging over multiple runs for analysis
+
+Give more explanation for why initial covarance and noise have effect they do on performance
+
